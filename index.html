@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile Barcode Scanner</title>
+  <style>
+    body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+    #video { width: 100%; max-width: 400px; border-radius: 10px; background: #000; }
+    #result { margin-top: 20px; font-weight: bold; font-size: 1.2rem; color: #007bff; }
+    .status { font-size: 0.8rem; color: #666; margin-bottom: 10px; }
+  </style>
+  <script src="index.js"></script>
+</head>
+<body>
+
+<h2>Skener čárových kódů</h2>
+<div id="status" class="status">Inicializace...</div>
+<video id="video" autoplay playsinline></video>
+<div id="result">Zatím nic nenaskenováno</div>
+</body>
+</html>
