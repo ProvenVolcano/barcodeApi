@@ -3,64 +3,80 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mobile Barcode Scanner</title>
+  <title>QR Scanner s odkazem</title>
   <style>
-    body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-    #video { width: 100%; max-width: 400px; border-radius: 10px; background: #000; }
-    #result { margin-top: 20px; font-weight: bold; font-size: 1.2rem; color: #007bff; }
+    body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #f4f4f9; }
+    #video { width: 100%; max-width: 400px; border-radius: 15px; background: #000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    #result-container { margin-top: 20px; text-align: center; min-height: 50px; }
+    #result-link { font-size: 1.2rem; color: #007bff; text-decoration: none; font-weight: bold; word-break: break-all; }
+    #result-link:hover { text-decoration: underline; }
     .status { font-size: 0.8rem; color: #666; margin-bottom: 10px; }
+    .hint { margin-top: 10px; font-size: 0.9rem; color: #888; }
   </style>
 </head>
 <body>
 
-<h2>Skener čárových kódů</h2>
-<div id="status" class="status">Inicializace...</div>
+<h2>QR Skener</h2>
+<div id="status" class="status">Inicializace kamery...</div>
 <video id="video" autoplay playsinline></video>
-<div id="result">Zatím nic nenaskenováno</div>
+
+<div id="result-container">
+  <div id="label">Výsledek:</div>
+  <a id="result-link" href="#" target="_blank">Zatím nic nenaskenováno</a>
+</div>
+
+<p class="hint">Namiřte kameru na QR kód nebo čárový kód.</p>
 
 <script>
   const video = document.getElementById('video');
-  const resultDiv = document.getElementById('result');
+  const resultLink = document.getElementById('result-link');
   const statusDiv = document.getElementById('status');
 
   async function startScanner() {
-    // 1. Kontrola, zda prohlížeč API podporuje
     if (!('BarcodeDetector' in window)) {
-      statusDiv.innerText = "Chyba: BarcodeDetector není v tomto prohlížeči podporován.";
+      statusDiv.innerText = "Chyba: BarcodeDetector není podporován. Zkuste Chrome na Androidu.";
       return;
     }
 
     const detector = new BarcodeDetector({
-      formats: ['ean_13', 'code_128', 'qr_code', 'upc_a']
+      formats: ['qr_code', 'ean_13', 'code_128']
     });
 
     try {
-      // 2. Přístup k zadní kameře mobilu
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" }
       });
       video.srcObject = stream;
-      statusDiv.innerText = "Skener aktivní (zadní kamera)";
+      statusDiv.innerText = "Skener je připraven ✅";
 
-      // 3. Smyčka detekce
       setInterval(async () => {
         try {
           const barcodes = await detector.detect(video);
           if (barcodes.length > 0) {
-            const code = barcodes[0].rawValue;
-            resultDiv.innerText = "Nalezen kód: " + code;
+            const detectedValue = barcodes[0].rawValue;
 
-            // Volitelná haptická odezva (vibrace), pokud to mobil umí
+            // Aktualizace odkazu
+            resultLink.innerText = detectedValue;
+
+            // Kontrola, zda jde o URL (začíná http/https)
+            if (detectedValue.startsWith('http://') || detectedValue.startsWith('https://')) {
+              resultLink.href = detectedValue;
+              resultLink.style.color = "#28a745"; // Zelená pro funkční odkaz
+            } else {
+              // Pokud to není URL, vyhledáme to na Googlu
+              resultLink.href = `https://www.google.com/search?q=${encodeURIComponent(detectedValue)}`;
+              resultLink.style.color = "#007bff";
+            }
+
             if (navigator.vibrate) navigator.vibrate(100);
           }
         } catch (e) {
-          // Během ostření může detekce občas selhat, to ignorujeme
+          // Ignorovat chyby během ostření
         }
-      }, 500); // Kontrola každých 500ms
+      }, 600);
 
     } catch (err) {
-      console.error(err);
-      statusDiv.innerText = "Chyba: Nepodařilo se získat přístup k fotoaparátu.";
+      statusDiv.innerText = "Chyba: Nepodařilo se spustit kameru. Ujistěte se, že používáte HTTPS.";
     }
   }
 
